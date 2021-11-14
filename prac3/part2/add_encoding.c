@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
-#include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 unsigned char decoder[] =
@@ -22,6 +22,7 @@ unsigned char decoder[] =
     "\x48\xff\xc1" /* inc %rcx */
     "\xeb\xed" /* jmp loop */
     "\xe8\xe1\xff\xff\xff"; /* starting: call xx */
+
 
 int main(int argc, char **argv) {
     char *file;
@@ -45,7 +46,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Perfect, processing file %s\n", file);
 
     len = sstat.st_size;
-    if ((fbuf = (unsigned char *)malloc(len)) = NULL) {
+    if ((fbuf = (unsigned char *)malloc(len)) == NULL) {
         perror("malloc");
         exit(EXIT_FAILURE);
     }
@@ -78,7 +79,7 @@ int main(int argc, char **argv) {
         printf("\nn[x] Choose to XOR with 0x%02x\n\n", xor_with);
 
         decoder[5] = xor_with;
-        decoder_len = strlen((char *)edcorder);
+        decoder_len = strlen((char *)decoder);
 
         if ((ebuf = (unsigned char *)malloc(decoder_len + len + 1)) == NULL) {
             perror("malloc");
@@ -87,16 +88,24 @@ int main(int argc, char **argv) {
         memset(ebuf, '\x0', sizeof(ebuf));
 
         for (i = 0; i < decoder_len; i++) {
-            ebuf[(i)] = decorder[i];
+            ebuf[(i)] = decoder[i];
         }
         for (i = 0; i < len; i++) {
             ebuf[(i + decoder_len)] = xor_with ^ *(fbuf + i);
         }
 
+        FILE *fp = fopen("a.out", "w");
+        if (fp == NULL) {
+          perror("fopen");
+          exit(EXIT_FAILURE);
+        }
+        fwrite(ebuf, 1, strlen((char *)ebuf), fp);
+        fclose(fp);
+
         printf("char code[]=\"");
         for (i = 0; i < strlen((char *)ebuf); i++) {
             if (i > 0 && i % 15 == 0)
-                printf("\"\n\"", ebuf[i]);
+                printf("\"\n\"");
             printf("\\x%02x", ebuf[i]);
         }
         printf("\";\n\n");
